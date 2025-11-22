@@ -1,6 +1,7 @@
 package com.example.lyra.service;
 
 import com.example.lyra.dto.response.GeminiAnalysisResponse;
+import com.example.lyra.model.EHumor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,9 +35,9 @@ public class GeminiAIService {
     private String geminiApiUrl;
     
     // Analisa o humor do usuário usando Gemini AI via REST API
-    public GeminiAnalysisResponse analisarHumor(String descricao) {
+    public GeminiAnalysisResponse analisarHumor(EHumor nivelHumorOriginal, String descricao) {
         try {
-            String prompt = construirPrompt(descricao);
+            String prompt = construirPrompt(nivelHumorOriginal, descricao);
             
             logger.info("Enviando análise de humor para Gemini AI");
             
@@ -194,13 +195,17 @@ public class GeminiAIService {
     }
     
     // Constrói o prompt para enviar ao Gemini
-    private String construirPrompt(String descricao) {
+    private String construirPrompt(EHumor nivelHumorOriginal, String descricao) {
+        String humorTexto = nivelHumorOriginal.name();
+
         return """
             Você é um assistente especializado em análise de saúde mental e bem-estar emocional.
             
             Analise o seguinte relato de humor do usuário e retorne APENAS um JSON válido no formato especificado.
             
-            RELATO DO USUÁRIO:
+            O usuário informou estar se sentindo: %s
+            
+            Relato detalhado do usuário:
             "%s"
             
             INSTRUÇÕES IMPORTANTES:
@@ -228,7 +233,7 @@ public class GeminiAIService {
             {"ResumoRecebido": "Frustração temporária relacionada ao trabalho", "Nivel": 1}
             
             Agora analise o relato acima e retorne o JSON.
-            """.formatted(descricao);
+            """.formatted(humorTexto, descricao);
     }
     
     // Remove marcações de código markdown da resposta

@@ -21,9 +21,10 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.routing.key}")
     private String routingKey;
 
+    // Ativa prioridade na fila
     @Bean
     public Queue humorQueue() {
-        return new Queue(humorQueue);
+        return QueueBuilder.durable(humorQueue).build();
     }
 
     @Bean

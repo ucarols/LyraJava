@@ -12,8 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class HumorMessage {
     private Long userId;
-    private String userName;
-    private EHumor humor;
-    private String descricao;
+    private String firstName;
+    private String lastName;
     private LocalDateTime dataHora;
 }

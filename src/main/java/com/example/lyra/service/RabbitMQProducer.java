@@ -1,7 +1,6 @@
 package com.example.lyra.service;
 
-import com.example.lyra.dto.HumorMessage;
-import com.example.lyra.model.EHumor;
+import com.example.lyra.dto.request.HumorAnalysisRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -10,9 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
-/**
- * Serviço responsável por publicar mensagens na fila de atualizações de humor
- */
 @Service
 public class RabbitMQProducer {
 
@@ -38,27 +34,11 @@ public class RabbitMQProducer {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    /**
-     * Envia uma atualização de humor para a fila de mensagens
-     * @param userId ID do usuário
-     * @param userName Nome do usuário
-     * @param humor Estado de humor do usuário
-     * @param descricao Descrição adicional sobre o humor
-     */
-    public void sendHumorUpdate(Long userId, String userName, EHumor humor, String descricao) {
-        // Registra o envio da mensagem no log
-        LOGGER.info(String.format("Enviando atualização de humor para o usuário: %s", userName));
-        
-        // Cria a mensagem com os dados do usuário
-        HumorMessage message = new HumorMessage(
-            userId,
-            userName,
-            humor,
-            descricao,
-            LocalDateTime.now()
-        );
-        
-        // Envia a mensagem para o exchange com a routing key especificada
-        rabbitTemplate.convertAndSend(exchange, routingKey, message);
+    public void sendToGemini(HumorAnalysisRequest request){
+        LOGGER.info("[RabbitMQ] Enviando relato para IA - Humor: {}, descricao: {}",
+                request.getNivelHumorOriginal(), request.getDescricao());
+
+        rabbitTemplate.convertAndSend(exchange, routingKey, request);
+        LOGGER.info("[RabbitMQ] Mensagem enviada para análise da IA");
     }
 }

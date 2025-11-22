@@ -21,7 +21,7 @@ public class DotNetIntegrationService {
     
     private final WebClient.Builder webClientBuilder;
     
-    @Value("${dotnet.api.url:http://localhost:5000}")
+    @Value("${dotnet.api.url}")
     private String dotNetApiUrl;
     
     @Value("${dotnet.api.timeout:10}")
@@ -39,7 +39,7 @@ public class DotNetIntegrationService {
             
             DotNetHumorResponse response = webClient
                     .post()
-                    .uri("/api/humor/analise")
+                    .uri("/api/v1/ai/solicitar")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(request)
                     .retrieve()

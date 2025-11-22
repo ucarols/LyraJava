@@ -6,13 +6,10 @@ import com.example.lyra.exception.ResourceNotFoundException;
 import com.example.lyra.model.EHumor;
 import com.example.lyra.model.ERole;
 import com.example.lyra.model.Role;
-import com.example.lyra.dto.HumorMessage;
 import com.example.lyra.model.User;
 import com.example.lyra.repository.RoleRepository;
 import com.example.lyra.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CachePut;
@@ -34,13 +31,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RabbitTemplate rabbitTemplate;
-    
-    @Value("${rabbitmq.exchange}")
-    private String exchange;
-    
-    @Value("${rabbitmq.routing.key}")
-    private String routingKey;
 
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
@@ -64,6 +54,12 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
         return convertToResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public User findUserEntityById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário nao encontrado com id: " + id));
     }
 
     @Transactional
@@ -138,24 +134,13 @@ public class UserService {
         if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         }
-        
-        // Atualiza o humor se fornecido
+
         if (userRequest.getHumor() != null) {
-            EHumor novoHumor = EHumor.fromCodigo(userRequest.getHumor());
-            user.setHumor(novoHumor);
-            
-            // Envia notificação de atualização de humor
-            if (userRequest.getHumorDescricao() != null) {
-                sendHumorUpdate(user, novoHumor, userRequest.getHumorDescricao());
-            } else {
-                sendHumorUpdate(user, novoHumor, "");
-            }
-        } else if (userRequest.getHumorDescricao() != null) {
-            // Atualiza apenas a descrição mantendo o humor atual
-            if (user.getHumor() == null) {
-                user.setHumor(EHumor.NEUTRO);
-            }
-            sendHumorUpdate(user, user.getHumor(), userRequest.getHumorDescricao());
+            user.setHumor(EHumor.fromCodigo(userRequest.getHumor()));
+        }
+
+        if (userRequest.getHumorDescricao() != null) {
+            user.setHumorDescricao(userRequest.getHumorDescricao());
         }
         
         // Atualiza as permissões se fornecidas
@@ -188,17 +173,6 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    private void sendHumorUpdate(User user, EHumor humor, String descricao) {
-        HumorMessage message = new HumorMessage(
-            user.getId(),
-            user.getFirstName() + " " + user.getLastName(),
-            humor,
-            descricao,
-            java.time.LocalDateTime.now()
-        );
-        rabbitTemplate.convertAndSend(exchange, routingKey, message);
-    }
-    
     private UserResponse convertToResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());

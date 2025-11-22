@@ -5,10 +5,14 @@ import com.example.lyra.dto.request.HumorAnalysisRequest;
 import com.example.lyra.dto.response.DotNetHumorResponse;
 import com.example.lyra.dto.response.GeminiAnalysisResponse;
 import com.example.lyra.dto.response.HumorAnalysisResponse;
+import com.example.lyra.model.EHumor;
+import com.example.lyra.model.User;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -22,9 +26,9 @@ public class HumorAnalysisService {
     // Processa a análise de humor completa
     public HumorAnalysisResponse processarAnaliseHumor(HumorAnalysisRequest request) {
         logger.info("Iniciando análise de humor - Nível original: {}", request.getNivelHumorOriginal());
-        
+
         // Etapa 1: Enviar para Gemini AI
-        GeminiAnalysisResponse geminiResponse = geminiAIService.analisarHumor(request.getDescricao());
+        GeminiAnalysisResponse geminiResponse = geminiAIService.analisarHumor(request.getNivelHumorOriginal(), request.getDescricao());
         
         logger.info("Análise do Gemini concluída - Nível: {}, Resumo: {}", 
             geminiResponse.getNivel(), geminiResponse.getResumoRecebido());
@@ -49,16 +53,13 @@ public class HumorAnalysisService {
             }
         }
         
-        // Nível 0 (Leve) ou 1 (Moderado)
-        if (nivel == 0 || nivel == 1) {
+        // Nível 0 (Leve), 1 (Moderado) ou 2 (Grave)
+        if (nivel == 0 || nivel == 1 || nivel == 2) {
             logger.info("Nível {} detectado - Enviando para sistema .NET", nivel);
-            return enviarParaDotNetENormal(resumo, nivel, descricaoOriginal, false);
-        }
-        
-        // Nível 2 (Grave)
-        else if (nivel == 2) {
-            logger.warn("Nível GRAVE detectado - Enviando para .NET com PRIORIDADE");
-            return enviarParaDotNetENormal(resumo, nivel, descricaoOriginal, true);
+            if (nivel == 0 || nivel == 1)
+                return enviarParaDotNetENormal(resumo, nivel, descricaoOriginal, false);
+            else
+                return enviarParaDotNetENormal(resumo, nivel, descricaoOriginal, true);
         }
         
         // Nível 3 (Gravíssimo)

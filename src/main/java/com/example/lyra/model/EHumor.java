@@ -5,7 +5,7 @@ public enum EHumor {
     BEM(2, "Bem"),
     NEUTRO(3, "Neutro"),
     NAO_TAO_BEM(4, "Não tão bem"),
-    DIFICIL(5, "Difícil");
+    TERRIVEL(5, "Terrível");
 
     private final int codigo;
     private final String descricao;
